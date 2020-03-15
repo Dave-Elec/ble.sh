@@ -1,8 +1,14 @@
 #!/bin/bash
-#%$> out/ble.sh
 #%[release = 0]
 #%[measure_load_time = 0]
 #%[debug_keylogger = 1]
+#%[target = getenv("blesh_target")]
+#%if target == "osh"
+#%%$> out/ble.osh
+shopt -s parse_unimplemented
+#%else
+#%%$> out/ble.sh
+#%end
 #%#----------------------------------------------------------------------------
 #%define inc
 #%%[guard_name = "@_included".replace("[^_a-zA-Z0-9]", "_")]
@@ -99,6 +105,17 @@ echo prologue >&2
 #------------------------------------------------------------------------------
 # check shell
 
+#%if target == "osh"
+if [ "$0" \!= osh ]; then
+  echo "ble.sh: This shell is not Oil. Please use this script with Oil." >&3
+  return 1 2>/dev/null || exit 1
+fi 3>&2 >/dev/null 2>&1 # set -x 対策 #D0930
+
+# if [ ?? How to detect the version ?? ]; then
+#   echo "ble.sh: Oil with a version under 0.8 is not supported." >&3
+#   return 1 2>/dev/null || exit 1
+# fi 3>&2 >/dev/null 2>&1 # set -x 対策 #D0930
+#%else
 if [ -z "$BASH_VERSION" ]; then
   echo "ble.sh: This shell is not Bash. Please use this script with Bash." >&3
   return 1 2>/dev/null || exit 1
@@ -108,6 +125,7 @@ if [ -z "${BASH_VERSINFO[0]}" ] || [ "${BASH_VERSINFO[0]}" -lt 3 ]; then
   echo "ble.sh: Bash with a version under 3.0 is not supported." >&3
   return 1 2>/dev/null || exit 1
 fi 3>&2 >/dev/null 2>&1 # set -x 対策 #D0930
+#%end
 
 if [[ $- != *i* ]]; then
   { ((${#BASH_SOURCE[@]})) && [[ ${BASH_SOURCE[${#BASH_SOURCE[@]}-1]} == *bashrc ]]; } ||
@@ -155,7 +173,12 @@ _ble_base_restore_FUNCNEST='
   ble/base/adjust-bash-options
 } &>/dev/null # set -x 対策 #D0930
 
+#%if target == "osh"
+# Pretend to be bash-5.0
+_ble_bash=50000
+#%else
 _ble_bash=$((BASH_VERSINFO[0]*10000+BASH_VERSINFO[1]*100+BASH_VERSINFO[2]))
+#%end
 
 ## @var _ble_edit_POSIXLY_CORRECT_adjusted
 ##   現在 POSIXLY_CORRECT 状態を待避した状態かどうかを保持します。
@@ -371,7 +394,12 @@ function ble/base/initialize-version-information {
 ble/base/initialize-version-information
 
 _ble_bash_loaded_in_function=0
+#%if target == "osh"
+# OSH_TODO: How to test this?
+false && _ble_bash_loaded_in_function=1
+#%else
 [[ ${FUNCNAME+set} ]] && _ble_bash_loaded_in_function=1
+#%end
 
 # will be overwritten by ble-core.sh
 function ble/util/assign {
@@ -574,7 +602,11 @@ function ble/base/initialize-cache-directory/.xdg {
     return 1
   fi
 
+#%if target == "osh"
+  local ver=${BLE_VERSINFO[0]}.${BLE_VERSINFO[1]}-osh
+#%else
   local ver=${BLE_VERSINFO[0]}.${BLE_VERSINFO[1]}
+#%end
   ble/base/.create-user-directory _ble_base_cache "$cache_dir/blesh/$ver"
 }
 function ble/base/initialize-cache-directory {
@@ -846,7 +878,11 @@ function ble/base/attach-from-PROMPT_COMMAND {
 }
 
 function ble/base/process-blesh-arguments {
+#%if target == "osh"
+  local opt_attach=none
+#%else
   local opt_attach=prompt
+#%end
   local flags=
   while (($#)); do
     local arg=$1; shift

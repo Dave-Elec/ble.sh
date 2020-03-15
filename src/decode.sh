@@ -127,7 +127,8 @@ if ((_ble_bash>=40200||_ble_bash>=40000&&!_ble_bash_loaded_in_function)); then
   function ble-decode-kbd/.set-keycode {
     local keyname=$1
     local code=$2
-    : ${_ble_decode_kbd__c2k[code]:=$keyname}
+    [[ ${_ble_decode_kbd__c2k[code]} ]] ||
+      _ble_decode_kbd__c2k[code]=$keyname
     _ble_decode_kbd__k2c[$keyname]=$code
   }
   function ble-decode-kbd/.get-keycode {
