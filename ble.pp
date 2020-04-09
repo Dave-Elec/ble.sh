@@ -107,15 +107,25 @@ echo prologue >&2
 # check shell
 
 #%if target == "osh"
-if [ "$0" \!= osh ]; then
-  echo "ble.sh: This shell is not Oil. Please use this script with Oil." >&3
+if [ -z "$OIL_VERSION" ]; then
+  if [ "$0" == osh ]; then
+    echo "ble.sh: Oil with a version under 0.8.pre3 is not supported." >&3
+  else
+    echo "ble.sh: This shell is not Oil. Please use this script with Oil." >&3
+  fi
   return 1 2>/dev/null || exit 1
 fi 3>&2 >/dev/null 2>&1 # set -x 対策 #D0930
 
-# if [ ?? How to detect the version ?? ]; then
-#   echo "ble.sh: Oil with a version under 0.8 is not supported." >&3
-#   return 1 2>/dev/null || exit 1
-# fi 3>&2 >/dev/null 2>&1 # set -x 対策 #D0930
+function ble/base/check-oil-version {
+  local rex='^([0-9]+)\.([0-9]+)\.(pre)?([0-9]+)'
+  [[ $OIL_VERSION =~ $rex ]]
+  _ble_bash_oil=$((BASH_REMATCH[1]*10000+BASH_REMATCH[2]*100+BASH_REMATCH[4]))
+}
+{
+  _ble_bash_oil=803
+  ble/base/check-oil-version
+} &>/dev/null # set -x 対策 #D0930
+
 #%else
 if [ -z "$BASH_VERSION" ]; then
   echo "ble.sh: This shell is not Bash. Please use this script with Bash." >&3
