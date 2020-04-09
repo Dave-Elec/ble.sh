@@ -5,7 +5,6 @@
 #%[target = getenv("blesh_target")]
 #%if target == "osh"
 #%%$> out/ble.osh
-shopt -s parse_unimplemented
 shopt -s parse_dynamic_arith
 shopt -s eval_unsafe_arith
 #%else
