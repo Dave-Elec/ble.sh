@@ -600,7 +600,7 @@ function ble/string#split-words {
 ##   @param[in]  text 分割する文字列を指定します。
 ##   @var[out] ret
 ##
-if ((_ble_bash>=40000)); then
+if ((_ble_bash>=40000&&!_ble_bash_oil)); then
   function ble/string#split-lines {
     mapfile -t "$1" <<< "${*:2}"
   }
@@ -1726,10 +1726,17 @@ function ble/fd#finalize {
 ## 関数 ble/fd#close fd
 ##   指定した fd を閉じます。
 function ble/fd#close {
+#%if target == "osh"
+  local fd=$(($1))
+  ((fd>=3)) || return 1
+  exec {fd}>&-
+  ble/array#remove _ble_util_openat_fdlist "$fd"
+#%else
   set -- $(($1))
   (($1>=3)) || return 1
   builtin eval "exec $1>&-"
   ble/array#remove _ble_util_openat_fdlist "$1"
+#%end
   return 0
 }
 
