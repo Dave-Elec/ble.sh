@@ -1685,7 +1685,6 @@ function ble/fd#is-open { : >&"$1"; } 2>/dev/null
 ##   @param[in] redirect
 ##     リダイレクトを指定します。
 _ble_util_openat_fdlist=()
-#%if target != "osh"
 if ((_ble_bash>=40100)); then
   function ble/fd#alloc {
     builtin eval "exec {$1}$2"; local _ble_local_ret=$?
@@ -1693,7 +1692,6 @@ if ((_ble_bash>=40100)); then
     return "$_ble_local_ret"
   }
 else
-#%end
   _ble_util_openat_nextfd=${bleopt_openat_base:-30}
   function ble/fd#alloc/.nextfd {
     # Note: Bash 3.1 では exec fd>&- で明示的に閉じても駄目。
@@ -1705,11 +1703,7 @@ else
     while ble/fd#is-open "$_ble_util_openat_nextfd"; do
       ((_ble_util_openat_nextfd++))
     done
-#%if target == "osh"
-    builtin eval "(($1=_ble_util_openat_nextfd++))"
-#%else
     (($1=_ble_util_openat_nextfd++))
-#%end
   }
   function ble/fd#alloc {
     local _fdvar=$1 _redirect=$2
@@ -1720,9 +1714,7 @@ else
     ble/array#push _ble_util_openat_fdlist "${!1}"
     return "$_ble_local_ret"
   }
-#%if target != "osh"
 fi
-#%end
 function ble/fd#finalize {
   local fd
   for fd in "${_ble_util_openat_fdlist[@]}"; do
