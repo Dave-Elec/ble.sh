@@ -1303,7 +1303,8 @@ function trap { ble/builtin/trap "$@"; }
 ##
 #%if target == "osh"
 function ble/util/readfile {
-  builtin eval "$1=\$(cat \"\$2\")"
+  builtin eval "$1=\$(cat \"\$2\"; echo -n _)"
+  builtin eval "$1=\${$1%_}"
 }
 function ble/util/mapfile {
   local _ble_local_i=0 _ble_local_val _ble_local_arr; _ble_local_arr=()
