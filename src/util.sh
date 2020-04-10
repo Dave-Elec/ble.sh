@@ -1307,7 +1307,7 @@ function ble/util/readfile {
   builtin eval "$1=\${$1%_}"
 }
 function ble/util/mapfile {
-  local _ble_local_i=0 _ble_local_val _ble_local_arr; _ble_local_arr=()
+  local IFS= _ble_local_i=0 _ble_local_val _ble_local_arr; _ble_local_arr=()
   while builtin read -r _ble_local_val || [[ $_ble_local_val ]]; do
     _ble_local_arr[_ble_local_i++]=$_ble_local_val
   done
