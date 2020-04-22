@@ -7598,8 +7598,8 @@ function ble/widget/.EDIT_COMMAND {
   ((_ble_edit_mark=READLINE_MARK))
 
   local N=${#_ble_edit_str}
-  ((_ble_edit_ind<0?_ble_edit_ind=0:(_ble_edit_ind>N&&(_ble_edit_ind=N))))
-  ((_ble_edit_mark<0?_ble_edit_mark=0:(_ble_edit_mark>N&&(_ble_edit_mark=N))))
+  ((_ble_edit_ind<0?(_ble_edit_ind=0):(_ble_edit_ind>N&&(_ble_edit_ind=N))))
+  ((_ble_edit_mark<0?(_ble_edit_mark=0):(_ble_edit_mark>N&&(_ble_edit_mark=N))))
 }
 
 ## ble-decode.sh 用の設定
