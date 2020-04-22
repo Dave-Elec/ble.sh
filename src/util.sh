@@ -1719,7 +1719,11 @@ fi
 function ble/fd#finalize {
   local fd
   for fd in "${_ble_util_openat_fdlist[@]}"; do
+#%if target == "osh"
+    exec {fd}>&-
+#%else
     builtin eval "exec $fd>&-"
+#%end
   done
   _ble_util_openat_fdlist=()
 }
