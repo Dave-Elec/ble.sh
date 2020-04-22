@@ -1658,7 +1658,7 @@ fi
 
 # Note: BASHPID は Bash-4.0 以上
 
-if ((_ble_bash>=40000&&!_ble_bash_oil)); then
+if ((_ble_bash>=40000)); then
   function ble/util/getpid { :; }
   function ble/util/is-running-in-subshell { [[ $$ != $BASHPID ]]; }
 else
