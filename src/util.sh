@@ -1650,7 +1650,7 @@ function ble/util/expand-alias {
   fi
 }
 
-if ((_ble_bash>=40000)); then
+if ((_ble_bash>=40000&&!_ble_bash_oil)); then
   function ble/util/is-stdin-ready { IFS= LC_ALL= LC_CTYPE=C builtin read -t 0; } &>/dev/null
 else
   function ble/util/is-stdin-ready { false; }
