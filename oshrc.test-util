@@ -1,0 +1,4 @@
+#!/usr/bin/env osh
+
+. out/ble.osh
+. lib/test-util.sh

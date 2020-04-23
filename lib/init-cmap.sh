@@ -49,6 +49,7 @@
 # 2020-01-31 @ESC, @NUL を追加した。
 # 2020-03-12 __line_limit__ を追加
 # 2020-04-13 cmap キャッシュ生成のバグ修正に伴う更新。
+# 2020-04-24 update for ble.osh
 
 function ble/init:cmap/bind-single-csi {
   ble-bind -k "ESC [ $1" "$2"

@@ -1,0 +1,26 @@
+#!/usr/bin/env osh
+# -*- mode: sh -*-
+
+source out/ble.osh
+
+# Turn off vbell (vbell outputs job messages in Oil)
+bleopt edit_vbell=
+bleopt decode_error_char_vbell=
+bleopt decode_error_cseq_vbell=
+bleopt decode_error_kseq_vbell=
+
+# WA somehow rps1 is enabled in Oil
+bleopt rps1=
+
+# minimal initialization
+_ble_decode_bind_state=emacs
+ble-edit/prompt/initialize
+
+# initialize LINES and COLUMNS
+if tput lines &>/dev/null; then
+  LINES=$(tput lines)
+  COLUMNS=$(tput cols)
+fi
+
+#PS1='[\e[32m\u@\h\e[m \W]\$ '
+#read -ep "$PS1"
