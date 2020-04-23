@@ -71,7 +71,11 @@ function ble/decode/uses-isolated-esc {
       return 0
     elif [[ ! $_ble_decode_key__seq ]]; then
       local dicthead=_ble_decode_${_ble_decode_keymap}_kmap_ key=$((_ble_decode_Ctrl|91))
+#%if target == "osh"
+      builtin eval "local ent=\${$dicthead$_ble_decode_key__seq[\$key]-}"
+#%else
       builtin eval "local ent=\${$dicthead$_ble_decode_key__seq[key]-}"
+#%end
       [[ ${ent:2} ]] && return 0
     fi
   fi
@@ -1361,8 +1365,13 @@ function ble-decode/keymap/is-keymap {
 }
 
 function ble-decode/keymap/is-empty {
+#%if target == "osh"
+  ! ble/is-assoc "_ble_decode_${1}_kmap_" ||
+    builtin eval -- "((\${#_ble_decode_${1}_kmap_[*]}==0))"
+#%else
   ! ble/is-array "_ble_decode_${1}_kmap_" ||
     builtin eval -- "((\${#_ble_decode_${1}_kmap_[*]}==0))"
+#%end
 }
 
 function ble-decode/keymap/.onload {
@@ -1507,18 +1516,39 @@ function ble-decode-key/bind {
   for ((i=0;i<iN;i++)); do
     local key=${seq[i]}
 
+#%if target == "osh"
+    declare -gA "$dicthead$tseq"
+    builtin eval "local ocmd=\${$dicthead$tseq[\$key]}"
+#%else
     builtin eval "local ocmd=\${$dicthead$tseq[key]}"
+#%end
     if ((i+1==iN)); then
       if [[ ${ocmd::1} == _ ]]; then
+#%if target == "osh"
+        builtin eval "$dicthead$tseq[\$key]=${ocmd%%:*}:\$cmd"
+#%else
         builtin eval "$dicthead$tseq[key]=${ocmd%%:*}:\$cmd"
+#%end
       else
+#%if target == "osh"
+        builtin eval "$dicthead$tseq[\$key]=1:\$cmd"
+#%else
         builtin eval "$dicthead$tseq[key]=1:\$cmd"
+#%end
       fi
     else
       if [[ ! $ocmd ]]; then
+#%if target == "osh"
+        builtin eval "$dicthead$tseq[\$key]=_"
+#%else
         builtin eval "$dicthead$tseq[key]=_"
+#%end
       elif [[ ${ocmd::1} == 1 ]]; then
+#%if target == "osh"
+        builtin eval "$dicthead$tseq[\$key]=_:\${ocmd#*:}"
+#%else
         builtin eval "$dicthead$tseq[key]=_:\${ocmd#*:}"
+#%end
       fi
       tseq=${tseq}_$key
     fi
@@ -1543,10 +1573,19 @@ function ble-decode-key/set-timeout {
     tseq=${tseq}_${seq[i]}
   done
 
+#%if target == "osh"
+  declare -gA "$dicthead$tseq"
+  builtin eval "local ent=\${$dicthead$tseq[\$key]}"
+#%else
   builtin eval "local ent=\${$dicthead$tseq[key]}"
+#%end
   if [[ $ent == _* ]]; then
     local cmd=; [[ $ent == *:* ]] && cmd=${ent#*:}
+#%if target == "osh"
+    builtin eval "$dicthead$tseq[\$key]=_$timeout${cmd:+:}\$cmd"
+#%else
     builtin eval "$dicthead$tseq[key]=_$timeout${cmd:+:}\$cmd"
+#%end
   else
     ble/util/print "ble-bind -T: specified partial keyspec not found." >&2
     return 1
@@ -1573,7 +1612,11 @@ function ble-decode-key/unbind {
 
   local isfirst=1 ent=
   while
+#%if target == "osh"
+    builtin eval "ent=\${$dicthead$tseq[\$key]}"
+#%else
     builtin eval "ent=\${$dicthead$tseq[key]}"
+#%end
 
     if [[ $isfirst ]]; then
       # command を消す
@@ -1581,7 +1624,11 @@ function ble-decode-key/unbind {
       if [[ ${ent::1} == _ ]]; then
         # ent = _[TIMEOUT] または _[TIMEOUT]:command の時は、単に command を消して終わる。
         # (未だ bind が残っているので、登録は削除せず break)。
+#%if target == "osh"
+        builtin eval "$dicthead$tseq[\$key]=\${ent%%:*}"
+#%else
         builtin eval "$dicthead$tseq[key]=\${ent%%:*}"
+#%end
         break
       fi
     else
@@ -1589,12 +1636,20 @@ function ble-decode-key/unbind {
       if [[ $ent == *:* ]]; then
         # _:command の場合には 1:command に書き換える。
         # (1:command の bind が残っているので登録は削除せず break)。
+#%if target == "osh"
+        builtin eval "$dicthead$tseq[\$key]=1:\${ent#*:}"
+#%else
         builtin eval "$dicthead$tseq[key]=1:\${ent#*:}"
+#%end
         break
       fi
     fi
 
+#%if target == "osh"
+    builtin unset -v "$dicthead$tseq[\$key]"
+#%else
     builtin unset -v "$dicthead$tseq[key]"
+#%end
     builtin eval "((\${#$dicthead$tseq[@]}!=0))" && break
 
     [[ $tseq ]]
@@ -1625,7 +1680,11 @@ function ble-decode-key/dump {
   for key in "${keys[@]}"; do
     local ret; ble-decode-unkbd "$key"
     local knames=$nseq${nseq:+ }$ret
+#%if target == "osh"
+    builtin eval "local ent=\${$dicthead$tseq[\$key]}"
+#%else
     builtin eval "local ent=\${$dicthead$tseq[key]}"
+#%end
     if [[ $ent == *:* ]]; then
       local cmd=${ent#*:} q=\' Q="'\''"
       case "$cmd" in
@@ -1704,7 +1763,11 @@ _ble_decode_key_batch=()
 
 function ble-decode-key/batch/flush {
   ((${#_ble_decode_key_batch[@]})) || return 1
+#%if target == "osh"
+  builtin eval "local command=\${${dicthead}[\$_ble_decode_KCODE_BATCH_CHAR]-}"
+#%else
   builtin eval "local command=\${${dicthead}[_ble_decode_KCODE_BATCH_CHAR]-}"
+#%end
   command=${command:2}
   if [[ $command ]]; then
     local chars; chars=("${_ble_decode_key_batch[@]}")
@@ -1717,9 +1780,17 @@ function ble-decode-key/batch/flush {
   return "$ext"
 }
 function ble/widget/__batch_char__.default {
+#%if target == "osh"
+  builtin eval "local widget_defchar=\${${dicthead}[\$_ble_decode_KCODE_DEFCHAR]-}"
+#%else
   builtin eval "local widget_defchar=\${${dicthead}[_ble_decode_KCODE_DEFCHAR]-}"
+#%end
   widget_defchar=${widget_defchar:2}
+#%if target == "osh"
+  builtin eval "local widget_default=\${${dicthead}[\$_ble_decode_KCODE_DEFAULT]-}"
+#%else
   builtin eval "local widget_default=\${${dicthead}[_ble_decode_KCODE_DEFAULT]-}"
+#%end
   widget_default=${widget_default:2}
 
   local -a unprocessed_chars=()
@@ -1771,7 +1842,11 @@ function ble-decode-key {
     #   widget が登録されていれば処理しそれ以外は無視。
     local dicthead=_ble_decode_${_ble_decode_keymap}_kmap_
     if (((key&_ble_decode_MaskChar)==_ble_decode_KCODE_MOUSE_MOVE)); then
+#%if target == "osh"
+      builtin eval "local command=\${${dicthead}[\$key]-}"
+#%else
       builtin eval "local command=\${${dicthead}[key]-}"
+#%end
       command=${command:2}
       ble-decode/widget/.call-keyseq
       continue
@@ -1784,7 +1859,11 @@ function ble-decode-key {
       continue
     fi
 
+#%if target == "osh"
+    builtin eval "local ent=\${$dicthead$_ble_decode_key__seq[\$key]-}"
+#%else
     builtin eval "local ent=\${$dicthead$_ble_decode_key__seq[key]-}"
+#%end
 
     # TIMEOUT: timeout が設定されている場合はその時間だけ待って
     # 続きを処理するかその場で確定するか判断する。
@@ -1881,7 +1960,11 @@ function ble-decode-key/.invoke-partial-match {
     local last=${_ble_decode_key__seq##*_}
     _ble_decode_key__seq=${_ble_decode_key__seq%_*}
 
+#%if target == "osh"
+    builtin eval "local ent=\${$dicthead$_ble_decode_key__seq[\$last]-}"
+#%else
     builtin eval "local ent=\${$dicthead$_ble_decode_key__seq[last]-}"
+#%end
     if [[ $ent == _*:* ]]; then
       local command=${ent#*:}
       if [[ $command ]]; then
@@ -1909,12 +1992,23 @@ function ble-decode-key/.invoke-partial-match {
     # 既定の文字ハンドラ
     local key=$1
     if ble-decode-key/ischar "$key"; then
+#%if target == "osh"
+      if ble/decode/has-input && builtin eval "[[ \${${dicthead}[\$_ble_decode_KCODE_BATCH_CHAR]-} ]]"; then
+        ble/array#push _ble_decode_key_batch "$key"
+        return 0
+      fi
+#%else
       if ble/decode/has-input && builtin eval "[[ \${${dicthead}[_ble_decode_KCODE_BATCH_CHAR]-} ]]"; then
         ble/array#push _ble_decode_key_batch "$key"
         return 0
       fi
+#%end
 
+#%if target == "osh"
+      builtin eval "local command=\${${dicthead}[\$_ble_decode_KCODE_DEFCHAR]-}"
+#%else
       builtin eval "local command=\${${dicthead}[_ble_decode_KCODE_DEFCHAR]-}"
+#%end
       command=${command:2}
       if [[ $command ]]; then
         local seq_save=$_ble_decode_key__seq
@@ -1925,7 +2019,11 @@ function ble-decode-key/.invoke-partial-match {
     fi
 
     # 既定のキーハンドラ
+#%if target == "osh"
+    builtin eval "local command=\${${dicthead}[\$_ble_decode_KCODE_DEFAULT]-}"
+#%else
     builtin eval "local command=\${${dicthead}[_ble_decode_KCODE_DEFAULT]-}"
+#%end
     command=${command:2}
     ble-decode/widget/.call-keyseq; local ext=$?
     ((ext!=125)) && return 0
@@ -1957,7 +2055,11 @@ _ble_decode_widget_last=
 function ble-decode/widget/.invoke-hook {
   local key=$1
   local dicthead=_ble_decode_${_ble_decode_keymap}_kmap_
+#%if target == "osh"
+  builtin eval "local hook=\${$dicthead[\$key]-}"
+#%else
   builtin eval "local hook=\${$dicthead[key]-}"
+#%end
   hook=${hook:2}
   [[ $hook ]] && builtin eval -- "$hook"
 }
@@ -3340,7 +3442,11 @@ function ble/builtin/bind/option:u/search-recursive {
   local key keys
   builtin eval "keys=(\${!$dicthead$tseq[@]})"
   for key in "${keys[@]}"; do
+#%if target == "osh"
+    builtin eval "local ent=\${$dicthead$tseq[\$key]}"
+#%else
     builtin eval "local ent=\${$dicthead$tseq[key]}"
+#%end
     if [[ ${ent:2} == "$command" ]]; then
       ble/array#push unbind_keys_list "${tseq//_/ } $key"
     fi
